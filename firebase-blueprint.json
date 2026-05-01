@@ -1,0 +1,101 @@
+{
+  "entities": {
+    "settings": {
+      "title": "App Settings",
+      "description": "User specific application settings like UPI ID and merchant name",
+      "type": "object",
+      "properties": {
+        "vpa": { "type": "string" },
+        "merchantName": { "type": "string" },
+        "currency": { "type": "string" }
+      },
+      "required": ["vpa", "merchantName", "currency"]
+    },
+    "customer": {
+      "title": "Customer",
+      "description": "Customer details including contact info and default rates",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "milkType": { "type": "string", "enum": ["Cow", "Buffalo"] },
+        "defaultRate": { "type": "number" },
+        "dailyQuantity": { "type": "number" },
+        "openingBalance": { "type": "number" },
+        "createdAt": { "type": "number" },
+        "userId": { "type": "string" }
+      },
+      "required": ["code", "name", "phone", "milkType", "defaultRate", "createdAt", "userId"]
+    },
+    "entry": {
+      "title": "Milk Entry",
+      "description": "Daily milk collection entry",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string" },
+        "date": { "type": "string" },
+        "slot": { "type": "string", "enum": ["Morning", "Evening"] },
+        "milkType": { "type": "string", "enum": ["Cow", "Buffalo"] },
+        "quantity": { "type": "number" },
+        "rate": { "type": "number" },
+        "amount": { "type": "number" },
+        "userId": { "type": "string" }
+      },
+      "required": ["customerId", "date", "slot", "milkType", "quantity", "rate", "amount", "userId"]
+    },
+    "payment": {
+      "title": "Payment Record",
+      "description": "Record of payment received from customer",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string" },
+        "method": { "type": "string", "enum": ["GPay", "PhonePe", "Bank Transfer", "Cash"] },
+        "transactionId": { "type": "string" },
+        "note": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["customerId", "amount", "date", "method", "userId"]
+    },
+    "notification": {
+      "title": "Notification",
+      "description": "Alerts for payments and system events",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["PAYMENT_ALERT", "SYSTEM"] },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "customerId": { "type": "string" },
+        "amount": { "type": "number" },
+        "isRead": { "type": "boolean" },
+        "createdAt": { "type": "number" },
+        "userId": { "type": "string" }
+      },
+      "required": ["type", "title", "message", "isRead", "createdAt", "userId"]
+    }
+  },
+  "firestore": {
+    "/settings/{userId}": {
+      "schema": "settings",
+      "description": "Global settings for a specific user"
+    },
+    "/customers/{customerId}": {
+      "schema": "customer",
+      "description": "All customers for all users, filtered by userId"
+    },
+    "/entries/{entryId}": {
+      "schema": "entry",
+      "description": "All milk entries for all users, filtered by userId"
+    },
+    "/payments/{paymentId}": {
+      "schema": "payment",
+      "description": "All payment records for all users, filtered by userId"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "notification",
+      "description": "User notifications"
+    }
+  }
+}

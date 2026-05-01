@@ -1,0 +1,120 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidSettings(data) {
+      return data.keys().hasAll(['vpa', 'merchantName', 'currency']) &&
+             data.keys().size() == 3 &&
+             data.vpa is string && data.vpa.size() <= 100 &&
+             data.merchantName is string && data.merchantName.size() <= 100 &&
+             data.currency is string && data.currency.size() <= 3;
+    }
+
+    function isValidCustomer(data) {
+      return data.keys().hasAll(['code', 'name', 'phone', 'milkType', 'defaultRate', 'createdAt', 'userId']) &&
+             data.userId == request.auth.uid &&
+             data.code is string && data.code.size() <= 20 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.phone is string && data.phone.size() <= 20 &&
+             data.milkType in ['Cow', 'Buffalo'] &&
+             data.defaultRate is number &&
+             data.createdAt is number;
+    }
+
+    function isValidEntry(data) {
+      return data.keys().hasAll(['customerId', 'date', 'slot', 'milkType', 'quantity', 'rate', 'amount', 'userId']) &&
+             data.userId == request.auth.uid &&
+             data.customerId is string &&
+             data.date is string &&
+             data.slot in ['Morning', 'Evening'] &&
+             data.milkType in ['Cow', 'Buffalo'] &&
+             data.quantity is number && data.quantity > 0 &&
+             data.rate is number && data.rate > 0 &&
+             data.amount is number;
+    }
+
+    function isValidPayment(data) {
+      return data.keys().hasAll(['customerId', 'amount', 'date', 'method', 'userId']) &&
+             data.userId == request.auth.uid &&
+             data.customerId is string &&
+             data.amount is number && data.amount > 0 &&
+             data.date is string &&
+             data.method in ['GPay', 'PhonePe', 'Bank Transfer', 'Cash'];
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['type', 'title', 'message', 'isRead', 'createdAt', 'userId']) &&
+             data.userId == request.auth.uid &&
+             data.type in ['PAYMENT_ALERT', 'SYSTEM'] &&
+             data.title is string && data.title.size() <= 200 &&
+             data.message is string && data.message.size() <= 1000 &&
+             data.isRead is bool &&
+             data.createdAt is number;
+    }
+
+    match /settings/{userId} {
+      allow get: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidSettings(incoming());
+      allow delete: if false;
+    }
+
+    match /customers/{customerId} {
+      allow get: if isSignedIn() && isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidCustomer(incoming());
+      allow update: if isSignedIn() && isOwner(existing().userId) && 
+                      isValidCustomer(incoming()) &&
+                      incoming().userId == existing().userId;
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+
+    match /entries/{entryId} {
+      allow get: if isSignedIn() && isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidEntry(incoming());
+      allow update: if isSignedIn() && isOwner(existing().userId) && 
+                      isValidEntry(incoming()) &&
+                      incoming().userId == existing().userId;
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+
+    match /payments/{paymentId} {
+      allow get: if isSignedIn() && isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidPayment(incoming());
+      allow update: if isSignedIn() && isOwner(existing().userId) && 
+                      isValidPayment(incoming()) &&
+                      incoming().userId == existing().userId;
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+
+    match /notifications/{notificationId} {
+      allow get: if isSignedIn() && isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidNotification(incoming());
+      allow update: if isSignedIn() && isOwner(existing().userId) && 
+                      isValidNotification(incoming()) &&
+                      incoming().userId == existing().userId;
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+  }
+}

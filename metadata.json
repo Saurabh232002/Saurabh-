@@ -1,0 +1,6 @@
+{
+  "name": "Dugdh Darpan",
+  "description": "A comprehensive dairy management app for tracking daily milk transactions, automated monthly billing, and payment records via QR scanning and UPI.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["Firebase", "QR Scanning", "Billing"]
+}
